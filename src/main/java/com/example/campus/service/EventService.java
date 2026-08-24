@@ -2,10 +2,13 @@ package com.example.campus.service;
 
 import com.example.campus.dto.CreateEventRequest;
 import com.example.campus.dto.UpdateEventRequest;
+import com.example.campus.exception.EventDeletionConflictException;
 import com.example.campus.exception.EventNotFoundException;
 import com.example.campus.exception.InvalidEventException;
 import com.example.campus.model.Event;
 import com.example.campus.repository.EventRepository;
+import com.example.campus.repository.ReservationRepository;
+import com.example.campus.repository.WaitlistRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,8 +18,15 @@ import java.util.Optional;
 public class EventService {
 
     private final EventRepository eventRepository;
-    public EventService(EventRepository eventRepository) {
+    private final ReservationRepository reservationRepository;
+    private final WaitlistRepository waitlistRepository;
+
+    public EventService(EventRepository eventRepository,
+                        ReservationRepository reservationRepository,
+                        WaitlistRepository waitlistRepository) {
         this.eventRepository = eventRepository;
+        this.reservationRepository = reservationRepository;
+        this.waitlistRepository = waitlistRepository;
     }
 
 
@@ -65,7 +75,16 @@ public class EventService {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() ->
                         new EventNotFoundException("Event not found: " + id));
+        long reservationCount =
+                reservationRepository.countByEventId(id);
 
+        long waitlistCount =
+                waitlistRepository.countByEventId(id);
+
+        if (reservationCount > 0 || waitlistCount > 0) {
+            throw new EventDeletionConflictException(
+                    "Event cannot be deleted while it has reservations or waitlist entries");
+        }
         eventRepository.delete(event);
     }
 

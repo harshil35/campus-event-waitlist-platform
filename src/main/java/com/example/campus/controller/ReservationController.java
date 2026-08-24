@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/events/{eventId}/reservations")
@@ -17,6 +18,29 @@ public class ReservationController {
     public ReservationController(
             ReservationService reservationService) {
         this.reservationService = reservationService;
+    }
+
+    @GetMapping("/{reservationId}")
+    public ResponseEntity<Reservation> getReservation(
+            @PathVariable Long eventId,
+            @PathVariable Long reservationId) {
+
+        Reservation reservation =
+                reservationService.getReservation(
+                        eventId,
+                        reservationId);
+
+        return ResponseEntity.ok(reservation);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<Reservation>> getReservationsForEvent(
+            @PathVariable Long eventId) {
+
+        List<Reservation> reservations =
+                reservationService.getReservationsForEvent(eventId);
+
+        return ResponseEntity.ok(reservations);
     }
 
     @PostMapping
@@ -30,5 +54,15 @@ public class ReservationController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(reservation);
+    }
+
+    @DeleteMapping("/{reservationId}")
+    public ResponseEntity<Void> cancelReservation(
+            @PathVariable Long eventId,
+            @PathVariable Long reservationId) {
+
+        reservationService.cancelReservation(eventId, reservationId);
+
+        return ResponseEntity.noContent().build();
     }
 }

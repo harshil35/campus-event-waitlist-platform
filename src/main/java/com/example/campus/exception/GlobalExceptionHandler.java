@@ -89,4 +89,46 @@ public class GlobalExceptionHandler {
                 .status(HttpStatus.BAD_REQUEST)
                 .body(body);
     }
+
+    @ExceptionHandler(EventDeletionConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleEventDeletionConflict(
+            EventDeletionConflictException exception) {
+
+        Map<String, Object> body = Map.of(
+                "status", 409,
+                "message", exception.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(body);
+    }
+
+    @ExceptionHandler(ReservationNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleReservationNotFound(
+            ReservationNotFoundException exception) {
+
+        Map<String, Object> body = Map.of(
+                "status", 404,
+                "message", exception.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(body);
+    }
+
+    @ExceptionHandler(WaitlistEntryNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleWaitlistEntryNotFound(
+            WaitlistEntryNotFoundException exception) {
+
+        Map<String, Object> body = Map.of(
+                "status", 404,
+                "message", exception.getMessage()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(body);
+    }
 }
