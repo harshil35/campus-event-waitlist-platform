@@ -1,11 +1,11 @@
 package com.example.campus.exception;
 
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,121 +14,130 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidEventException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidEvent(
+    public ProblemDetail handleInvalidEvent(
             InvalidEventException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 400,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.BAD_REQUEST,
+                "Invalid Event",
+                exception.getMessage()
         );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(body);
     }
 
     @ExceptionHandler(EventNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleEventNotFound(
+    public ProblemDetail handleEventNotFound(
             EventNotFoundException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 404,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.NOT_FOUND,
+                "Event Not Found",
+                exception.getMessage()
         );
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(body);
     }
 
     @ExceptionHandler(InvalidReservationException.class)
-    public ResponseEntity<Map<String, Object>> handleInvalidReservation(
+    public ProblemDetail handleInvalidReservation(
             InvalidReservationException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 409,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.CONFLICT,
+                "Invalid Reservation",
+                exception.getMessage()
         );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> handleValidationErrors(
+    public ProblemDetail handleValidationErrors(
             MethodArgumentNotValidException exception) {
+
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.BAD_REQUEST,
+                "Request validation failed"
+        );
+
+        problem.setTitle("Validation Failed");
 
         Map<String, String> errors = new HashMap<>();
 
         exception.getBindingResult()
                 .getFieldErrors()
                 .forEach(error ->
-                        errors.put(error.getField(), error.getDefaultMessage())
+                        errors.put(
+                                error.getField(),
+                                error.getDefaultMessage()
+                        )
                 );
 
-        Map<String, Object> body = new HashMap<>();
-        body.put("status", 400);
-        body.put("errors", errors);
+        problem.setProperty("errors", errors);
 
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(body);
+        return problem;
     }
 
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public ResponseEntity<Map<String, Object>> handleMessageNotReadable(
+    public ProblemDetail handleMessageNotReadable(
             HttpMessageNotReadableException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 400,
-                "message", "Request body is required"
+        return problem(
+                HttpStatus.BAD_REQUEST,
+                "Invalid Request",
+                "Request body is required or could not be parsed"
         );
-
-        return ResponseEntity
-                .status(HttpStatus.BAD_REQUEST)
-                .body(body);
     }
 
     @ExceptionHandler(EventDeletionConflictException.class)
-    public ResponseEntity<Map<String, Object>> handleEventDeletionConflict(
+    public ProblemDetail handleEventDeletionConflict(
             EventDeletionConflictException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 409,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.CONFLICT,
+                "Event Deletion Conflict",
+                exception.getMessage()
         );
-
-        return ResponseEntity
-                .status(HttpStatus.CONFLICT)
-                .body(body);
     }
 
     @ExceptionHandler(ReservationNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleReservationNotFound(
+    public ProblemDetail handleReservationNotFound(
             ReservationNotFoundException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 404,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.NOT_FOUND,
+                "Reservation Not Found",
+                exception.getMessage()
         );
-
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(body);
     }
 
     @ExceptionHandler(WaitlistEntryNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleWaitlistEntryNotFound(
+    public ProblemDetail handleWaitlistEntryNotFound(
             WaitlistEntryNotFoundException exception) {
 
-        Map<String, Object> body = Map.of(
-                "status", 404,
-                "message", exception.getMessage()
+        return problem(
+                HttpStatus.NOT_FOUND,
+                "Waitlist Entry Not Found",
+                exception.getMessage()
         );
+    }
 
-        return ResponseEntity
-                .status(HttpStatus.NOT_FOUND)
-                .body(body);
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ProblemDetail handleRateLimitExceeded(
+            RateLimitExceededException exception) {
+
+        return problem(
+                HttpStatus.TOO_MANY_REQUESTS,
+                "Too Many Requests",
+                exception.getMessage()
+        );
+    }
+
+    private ProblemDetail problem(
+            HttpStatus status,
+            String title,
+            String detail) {
+
+        ProblemDetail problem =
+                ProblemDetail.forStatusAndDetail(status, detail);
+
+        problem.setTitle(title);
+
+        return problem;
     }
 }

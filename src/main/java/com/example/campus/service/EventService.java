@@ -10,6 +10,8 @@ import com.example.campus.repository.EventRepository;
 import com.example.campus.repository.ReservationRepository;
 import com.example.campus.repository.WaitlistRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.List;
 import java.util.Optional;
@@ -29,7 +31,7 @@ public class EventService {
         this.waitlistRepository = waitlistRepository;
     }
 
-
+    @CacheEvict(value = "events", allEntries = true)
     public Event createEvent(CreateEventRequest request) {
         if (!request.getEndsAt().isAfter(request.getStartsAt())) {
             throw new InvalidEventException("endsAt must be after startsAt");
@@ -48,6 +50,7 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    @CacheEvict(value = "events", allEntries = true)
     public Event updateEvent(Long id, UpdateEventRequest request) {
 
         Event event = eventRepository.findById(id)
@@ -70,6 +73,7 @@ public class EventService {
         return eventRepository.save(event);
     }
 
+    @CacheEvict(value = "events", allEntries = true)
     public void deleteEvent(Long id) {
 
         Event event = eventRepository.findById(id)
@@ -88,7 +92,9 @@ public class EventService {
         eventRepository.delete(event);
     }
 
+    @Cacheable("events")
     public List<Event> getAllEvents() {
+        System.out.println("Fetching events from PostgreSQL");
         return eventRepository.findAll();
     }
 

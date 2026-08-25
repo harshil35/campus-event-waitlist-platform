@@ -1,7 +1,9 @@
 package com.example.campus.controller;
 
 import com.example.campus.dto.CreateReservationRequest;
+import com.example.campus.exception.RateLimitExceededException;
 import com.example.campus.model.Reservation;
+import com.example.campus.service.RateLimitService;
 import com.example.campus.service.ReservationService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -14,10 +16,13 @@ import java.util.List;
 public class ReservationController {
 
     private final ReservationService reservationService;
+    private final RateLimitService rateLimitService;
 
     public ReservationController(
-            ReservationService reservationService) {
+            ReservationService reservationService,
+            RateLimitService rateLimitService) {
         this.reservationService = reservationService;
+        this.rateLimitService = rateLimitService;
     }
 
     @GetMapping("/{reservationId}")
@@ -47,6 +52,10 @@ public class ReservationController {
     public ResponseEntity<Reservation> createReservation(
             @PathVariable Long eventId,
             @Valid @RequestBody CreateReservationRequest request) {
+
+        if (!rateLimitService.isAllowed(request.getAttendeeEmail())) {
+            throw new RateLimitExceededException();
+        }
 
         Reservation reservation =
                 reservationService.createReservation(eventId, request);
